@@ -1,0 +1,879 @@
+Basic concepts of RAID
+---------------------------------
+
+Chunk: - This is the size of data block used in RAID configuration. If chunk size is 64KB then there would be 16 chunks in 1MB (1024KB/64KB) RAID array.
+Hot Spare: - This is the additional disk in RAID array. If any disk fails, data from faulty disk will be migrated in this spare disk automatically.
+Mirroring: - If this feature is enabled, a copy of same data will be saved in other disk also. It is just like making an additional copy of data for backup purpose.
+Striping: - If this feature is enabled, data will be written in all available disks randomly. It is just like sharing data between all disks, so all of them fill equally.
+Parity: - This is method of regenerating lost data from saved parity information.
+
+
+RAID Level 0
+------------------
+This level provides striping without parity. Since it does not store any parity data and perform read and write operation simultaneously, speed would be much faster than other level.
+This level requires at least two hard disks. All hard disks in this level are filled equally. You should use this level only if read and write speed are concerned.
+If you decide to use this level then always deploy alternative data backup plan. As any single disk failure from array will result in total data loss.
+
+RAID Level 1
+------------------
+This level provides parity without striping.
+It writes all data on two disks. If one disk is failed or removed, we still have all data on other disk.
+This level requires double hard disks. It means if you want to use 2 hard disks then you have to deploy 4 hard disks or if you want use one hard disk then you have to deploy two hard disks. 
+First hard disk stores original data while other disk stores the exact copy of first disk. 
+Since data is written twice, performance will be reduced. 
+You should use this level only if data safety is concerned at any cost.
+
+RAID Level 5
+------------------
+This level provides both parity and striping. It requires at least three disks. 
+It writes parity data equally in all disks. If one disk is failed, data can be reconstructed from parity data available on remaining disks. 
+This provides a combination of integrity and performance. Wherever possible you should always use this level.
+
+How to configure software RAID step by step
+-------------------------------------------
+We have added disks of 2GB each for learning purpose.
+OS: Redhat
+VM Hosted in AWS
+
+[root@vm1 ~]# lsblk
+NAME    MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+xvda    202:0    0   10G  0 disk
+├─xvda1 202:1    0    1M  0 part
+├─xvda2 202:2    0  200M  0 part /boot/efi
+├─xvda3 202:3    0    1G  0 part /boot
+└─xvda4 202:4    0  8.8G  0 part /
+xvdb    202:16   0    2G  0 disk
+xvdc    202:32   0    2G  0 disk
+xvdd    202:48   0    2G  0 disk
+[root@vm1 ~]#
+
+## mdadm package needed for working with OS RAID
+[root@vm1 ~]# rpm -qa | grep -i mdadm
+mdadm-4.2-12.el9_4.x86_64
+[root@vm1 ~]#
+
+Creating RAID 0 Array
+---------------------
+We can create RAID 0 array with disks or partitions. 
+To understand both options we will create two separate RAID 0 arrays; one with disks and other with partitions.
+RAID 0 Array requires at least two disks or partitions. We will use /dev/xvdc and /dev/xvdd disk to create RAID 0 Array from disks. 
+We will create two partitions in /dev/xvdb and later use them to create another RAID 0 Array from partitions.
+
+
+#mdadm --create --verbose /dev/[ RAID array Name or Number] --level=[RAID Level] --raid-devices=[Number of storage devices] [Storage Device] [Storage Device]
+
+[root@vm1 ~]# mdadm --create --verbose /dev/md0 --level=0 --raid-devices=2 /dev/xvdc /dev/xvdd
+mdadm: chunk size defaults to 512K
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md0 started.
+[root@vm1 ~]#
+
+[root@vm1 ~]# cat /proc/mdstat
+Personalities : [raid0]
+md0 : active raid0 xvdd[1] xvdc[0]
+      4188160 blocks super 1.2 512k chunks
+
+unused devices: <none>
+[root@vm1 ~]#
+
+Creating RAID 0 Array with partitions
+--------------------------------------
+
+[root@vm1 ~]# fdisk /dev/xvdb  ## Creating partition from fdisk 
+
+Welcome to fdisk (util-linux 2.37.4).
+Changes will remain in memory only, until you decide to write them.
+Be careful before using the write command.
+
+Device does not contain a recognized partition table.
+Created a new DOS disklabel with disk identifier 0xe61531fd.
+
+Command (m for help): n  ## To create a partition 
+Partition type
+   p   primary (0 primary, 0 extended, 4 free)
+   e   extended (container for logical partitions)
+Select (default p): p  ## Creating Primary Partition 
+Partition number (1-4, default 1): 1
+First sector (2048-4194303, default 2048):
+Last sector, +/-sectors or +/-size{K,M,G,T,P} (2048-4194303, default 4194303): +1G
+
+Created a new partition 1 of type 'Linux' and of size 1 GiB.
+
+Command (m for help): p  ## print 
+Disk /dev/xvdb: 2 GiB, 2147483648 bytes, 4194304 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0xe61531fd
+
+Device     Boot Start     End Sectors Size Id Type
+/dev/xvdb1       2048 2099199 2097152   1G 83 Linux
+
+Command (m for help): l ## to list partition type 
+
+00 Empty            24 NEC DOS          81 Minix / old Lin  bf Solaris
+01 FAT12            27 Hidden NTFS Win  82 Linux swap / So  c1 DRDOS/sec (FAT-
+02 XENIX root       39 Plan 9           83 Linux            c4 DRDOS/sec (FAT-
+03 XENIX usr        3c PartitionMagic   84 OS/2 hidden or   c6 DRDOS/sec (FAT-
+04 FAT16 <32M       40 Venix 80286      85 Linux extended   c7 Syrinx
+05 Extended         41 PPC PReP Boot    86 NTFS volume set  da Non-FS data
+06 FAT16            42 SFS              87 NTFS volume set  db CP/M / CTOS / .
+07 HPFS/NTFS/exFAT  4d QNX4.x           88 Linux plaintext  de Dell Utility
+08 AIX              4e QNX4.x 2nd part  8e Linux LVM        df BootIt
+09 AIX bootable     4f QNX4.x 3rd part  93 Amoeba           e1 DOS access
+0a OS/2 Boot Manag  50 OnTrack DM       94 Amoeba BBT       e3 DOS R/O
+0b W95 FAT32        51 OnTrack DM6 Aux  9f BSD/OS           e4 SpeedStor
+0c W95 FAT32 (LBA)  52 CP/M             a0 IBM Thinkpad hi  ea Linux extended
+0e W95 FAT16 (LBA)  53 OnTrack DM6 Aux  a5 FreeBSD          eb BeOS fs
+0f W95 Ext'd (LBA)  54 OnTrackDM6       a6 OpenBSD          ee GPT
+10 OPUS             55 EZ-Drive         a7 NeXTSTEP         ef EFI (FAT-12/16/
+11 Hidden FAT12     56 Golden Bow       a8 Darwin UFS       f0 Linux/PA-RISC b
+12 Compaq diagnost  5c Priam Edisk      a9 NetBSD           f1 SpeedStor
+14 Hidden FAT16 <3  61 SpeedStor        ab Darwin boot      f4 SpeedStor
+16 Hidden FAT16     63 GNU HURD or Sys  af HFS / HFS+       f2 DOS secondary
+17 Hidden HPFS/NTF  64 Novell Netware   b7 BSDI fs          fb VMware VMFS
+18 AST SmartSleep   65 Novell Netware   b8 BSDI swap        fc VMware VMKCORE
+1b Hidden W95 FAT3  70 DiskSecure Mult  bb Boot Wizard hid  fd Linux raid auto
+1c Hidden W95 FAT3  75 PC/IX            bc Acronis FAT32 L  fe LANstep
+1e Hidden W95 FAT1  80 Old Minix        be Solaris boot     ff BBT
+
+Aliases:
+   linux          - 83
+   swap           - 82
+   extended       - 05
+   uefi           - EF
+   raid           - FD
+   lvm            - 8E
+   linuxex        - 85
+
+Command (m for help): t ## to change the 
+Selected partition 1
+Hex code or alias (type L to list all): fd ## Linux raid auto
+Changed type of partition 'Linux' to 'Linux raid autodetect'.
+
+Command (m for help): w # To save and exit
+The partition table has been altered.
+Calling ioctl() to re-read partition table.
+Syncing disks.
+
+[root@vm1 ~]# partprobe  ##update run time kernel 
+[root@vm1 ~]#
+
+[root@vm1 ~]# parted /dev/xvdb   ## Creating partition from parted 
+GNU Parted 3.5
+Using /dev/xvdb
+Welcome to GNU Parted! Type 'help' to view a list of commands.
+(parted) print
+Model: Xen Virtual Block Device (xvd)
+Disk /dev/xvdb: 2147MB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags:
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  1075MB  1074MB  primary               raid
+
+(parted) mkpart
+Partition type?  primary/extended? primary
+File system type?  [ext2]?
+Start? 1076
+End? 2100
+End? 3000
+(parted) print
+Model: Xen Virtual Block Device (xvd)
+Disk /dev/xvdb: 2147MB
+Sector size (logical/physical): 512B/512B
+Partition Table: msdos
+Disk Flags:
+
+Number  Start   End     Size    Type     File system  Flags
+ 1      1049kB  1075MB  1074MB  primary               raid
+ 2      1076MB  2100MB  1024MB  primary  ext2
+
+(parted) quit
+Information: You may need to update /etc/fstab.
+
+[root@vm1 ~]# partprobe
+[root@vm1 ~]#
+
+
+[root@vm1 ~]# lsblk
+NAME    MAJ:MIN RM  SIZE RO TYPE  MOUNTPOINTS
+xvda    202:0    0   10G  0 disk
+├─xvda1 202:1    0    1M  0 part
+├─xvda2 202:2    0  200M  0 part  /boot/efi
+├─xvda3 202:3    0    1G  0 part  /boot
+└─xvda4 202:4    0  8.8G  0 part  /
+xvdb    202:16   0    2G  0 disk
+├─xvdb1 202:17   0    1G  0 part
+└─xvdb2 202:18   0  977M  0 part
+xvdc    202:32   0    2G  0 disk
+└─md0     9:0    0    4G  0 raid0
+xvdd    202:48   0    2G  0 disk
+└─md0     9:0    0    4G  0 raid0
+[root@vm1 ~]#
+
+[root@vm1 ~]# mdadm --create --verbose /dev/md1 --level=0 --raid-devices=2 /dev/xvdb1 /dev/xvdb2
+mdadm: chunk size defaults to 512K
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md1 started.
+[root@vm1 ~]#
+
+When we use mdadm command to create a new RAID array, it puts its signature on provided device or partition. 
+It means we can create RAID array from any partition type or even from a disk which does not contain any partition at all. 
+So which partition type we use here is not important, the important point which we should always consider is that partition should not contain any valuable data. 
+During this process all data from partition will be wiped out.
+
+Creating File system in RAID Array
+--------------------------------------------
+#mkfs –t [File system type] [RAID Device]
+
+[root@vm1 ~]# mkfs -t ext4 /dev/md0  ## Creating ext4 FS 
+mke2fs 1.46.5 (30-Dec-2021)
+Creating filesystem with 1047040 4k blocks and 262144 inodes
+Filesystem UUID: 843d928d-8c28-4160-aa21-f19646ce04f8
+Superblock backups stored on blocks:
+        32768, 98304, 163840, 229376, 294912, 819200, 884736
+
+Allocating group tables: done
+Writing inode tables: done
+Creating journal (16384 blocks): done
+Writing superblocks and filesystem accounting information: done
+
+[root@vm1 ~]# mkfs -t xfs /dev/md1 ## Creating XFS FS 
+log stripe unit (524288 bytes) is too large (maximum is 256KiB)
+log stripe unit adjusted to 32KiB
+meta-data=/dev/md1               isize=512    agcount=8, agsize=63872 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=1, sparse=1, rmapbt=0
+         =                       reflink=1    bigtime=1 inobtcount=1 nrext64=0
+data     =                       bsize=4096   blocks=510976, imaxpct=25
+         =                       sunit=128    swidth=256 blks
+naming   =version 2              bsize=4096   ascii-ci=0, ftype=1
+log      =internal log           bsize=4096   blocks=16384, version=2
+         =                       sectsz=512   sunit=8 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@vm1 ~]#
+
+
+Temporary mounting RAID 0 Array
+--------------------------------------------
+[root@vm1 ~]# mkdir /mount
+[root@vm1 ~]# mount /dev/md0 /mount
+[root@vm1 ~]# ls /mount
+lost+found
+[root@vm1 ~]# mkdir /mount/md0-test-dir
+[root@vm1 ~]# touch /mount/md0-test-file
+[root@vm1 ~]# ls /mount
+lost+found  md0-test-dir  md0-test-file
+[root@vm1 ~]# umount /mount
+
+
+[root@vm1 ~]# mount /dev/md1 /mount
+[root@vm1 ~]# ls /mount
+[root@vm1 ~]# mkdir /mount/md1-test-dir
+[root@vm1 ~]# touch /mount/md1-test-file
+[root@vm1 ~]# ls /mount
+md1-test-dir  md1-test-file
+[root@vm1 ~]# umount /mount
+[root@vm1 ~]# ls /mount
+[root@vm1 ~]#
+
+Mounting RAID Array permanently
+-------------------------------------------
+
+[root@vm1 ~]# blkid /dev/md0
+/dev/md0: UUID="843d928d-8c28-4160-aa21-f19646ce04f8" TYPE="ext4"
+[root@vm1 ~]# mount UUID="843d928d-8c28-4160-aa21-f19646ce04f8" /mount
+[root@vm1 ~]# ls /mount
+lost+found  md0-test-dir  md0-test-file
+[root@vm1 ~]#
+
+
+
+[root@vm1 ~]# blkid /dev/md1
+/dev/md1: UUID="d97d2ffa-8fee-4a0b-ae1d-9625c3d316da" TYPE="xfs"
+[root@vm1 ~]# mount UUID="d97d2ffa-8fee-4a0b-ae1d-9625c3d316da" /mount
+[root@vm1 ~]# ls /mount
+md1-test-dir  md1-test-file
+[root@vm1 ~]# umount /mount
+[root@vm1 ~]#
+
+[root@vm1 ~]# mkdir /app1
+[root@vm1 ~]# mkdir /app2
+
+
+[root@vm1 ~]# cat /etc/fstab | tail -2
+UUID=843d928d-8c28-4160-aa21-f19646ce04f8 /app1 ext4 defaults 0 0
+UUID=d97d2ffa-8fee-4a0b-ae1d-9625c3d316da /app2 xfs defaults 0 0
+
+[root@vm1 ~]# mount -a
+mount: (hint) your fstab has been modified, but systemd still uses
+       the old version; use 'systemctl daemon-reload' to reload.
+[root@vm1 ~]# systemctl daemon-reload
+[root@vm1 ~]# mount -a
+[root@vm1 ~]#
+
+[root@vm1 ~]# df -TPh /app*
+Filesystem     Type  Size  Used Avail Use% Mounted on
+/dev/md0       ext4  3.9G   28K  3.7G   1% /app1
+/dev/md1       xfs   1.9G   46M  1.9G   3% /app2
+[root@vm1 ~]#
+
+Delete RAID
+----------------------
+
+[root@vm1 ~]# umount /app1
+[root@vm1 ~]# umount /app2
+
+[root@vm1 ~]# cat /proc/mdstat
+Personalities : [raid0]
+md1 : active raid0 xvdb2[1] xvdb1[0]
+      2044928 blocks super 1.2 512k chunks
+
+md0 : active raid0 xvdd[1] xvdc[0]
+      4188160 blocks super 1.2 512k chunks
+
+unused devices: <none>
+
+[root@vm1 ~]# mdadm --stop /dev/md0  ## To stop the RAID Array
+mdadm: stopped /dev/md0
+[root@vm1 ~]# mdadm --stop /dev/md1  ## To stop the RAID Array
+mdadm: stopped /dev/md1
+
+[root@vm1 ~]# cat /proc/mdstat
+Personalities : [raid0]
+unused devices: <none>
+[root@vm1 ~]# cp -p /etc/fstab.bkp /etc/fstab  ## Remove the entries related to RAID
+
+
+[root@vm1 ~]# dd if=/dev/zero of=/dev/xvdb bs=1M  ## Wipe the disk 
+dd: error writing '/dev/xvdb': No space left on device
+2049+0 records in
+2048+0 records out
+2147483648 bytes (2.1 GB, 2.0 GiB) copied, 32.6589 s, 65.8 MB/s
+
+[root@vm1 ~]# dd if=/dev/zero of=/dev/xvdc bs=1M ## Wipe the disk 
+dd: error writing '/dev/xvdc': No space left on device
+2049+0 records in
+2048+0 records out
+2147483648 bytes (2.1 GB, 2.0 GiB) copied, 32.6641 s, 65.7 MB/s
+
+[root@vm1 ~]# dd if=/dev/zero of=/dev/xvdd bs=1M ## Wipe the disk 
+dd: error writing '/dev/xvdd': No space left on device
+2049+0 records in
+2048+0 records out
+2147483648 bytes (2.1 GB, 2.0 GiB) copied, 32.6568 s, 65.8 MB/s
+[root@vm1 ~]#
+
+How to create RAID 1 and RAID 5 array
+--------------------------------------------------
+[root@vm1 ~]# mdadm --create --verbose /dev/md0 --level=1 --raid-devices=2 /dev/xvdc /dev/xvdd  ## RAID 1
+mdadm: Note: this array has metadata at the start and
+    may not be suitable as a boot device.  If you plan to
+    store '/boot' on this device please ensure that
+    your boot-loader understands md/v1.x metadata, or use
+    --metadata=0.90
+mdadm: size set to 2094080K
+Continue creating array? y
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md0 started.
+[root@vm1 ~]#
+
+[root@vm1 ~]# mdadm --stop /dev/md0
+
+[root@vm1 ~]# cat /proc/mdstat
+Personalities : [raid0] [raid1]
+unused devices: <none>
+[root@vm1 ~]#
+
+
+[root@vm1 ~]# dd if=/dev/zero of=/dev/xvdc bs=1M
+dd: error writing '/dev/xvdc': No space left on device
+2049+0 records in
+2048+0 records out
+2147483648 bytes (2.1 GB, 2.0 GiB) copied, 32.6584 s, 65.8 MB/s
+[root@vm1 ~]# dd if=/dev/zero of=/dev/xvdd bs=1M
+dd: error writing '/dev/xvdd': No space left on device
+2049+0 records in
+2048+0 records out
+2147483648 bytes (2.1 GB, 2.0 GiB) copied, 32.6579 s, 65.8 MB/s
+[root@vm1 ~]#
+
+
+
+
+[root@vm1 ~]# mdadm  --create --verbose /dev/md0 --level=5 --raid-devices=3 /dev/xvdb /dev/xvdc /dev/xvdd  ##RAID 5
+mdadm: layout defaults to left-symmetric
+mdadm: layout defaults to left-symmetric
+mdadm: chunk size defaults to 512K
+mdadm: size set to 2094080K
+mdadm: Defaulting to version 1.2 metadata
+mdadm: array /dev/md0 started.
+[root@vm1 ~]# cat /proc/mdstat
+Personalities : [raid0] [raid1] [raid6] [raid5] [raid4]
+md0 : active raid5 xvdd[3] xvdc[1] xvdb[0]
+      4188160 blocks super 1.2 level 5, 512k chunk, algorithm 2 [3/2] [UU_]
+      [====>................]  recovery = 23.3% (489044/2094080) finish=0.7min speed=34931K/sec
+
+unused devices: <none>
+[root@vm1 ~]# cat /proc/mdstat
+Personalities : [raid0] [raid1] [raid6] [raid5] [raid4]
+md0 : active raid5 xvdd[3] xvdc[1] xvdb[0]
+      4188160 blocks super 1.2 level 5, 512k chunk, algorithm 2 [3/3] [UUU]
+
+unused devices: <none>
+[root@vm1 ~]#
+
+[root@vm1 ~]# mkfs -t xfs /dev/md0  ## Creating XFS FS 
+log stripe unit (524288 bytes) is too large (maximum is 256KiB)
+log stripe unit adjusted to 32KiB
+meta-data=/dev/md0               isize=512    agcount=8, agsize=130944 blks
+         =                       sectsz=512   attr=2, projid32bit=1
+         =                       crc=1        finobt=1, sparse=1, rmapbt=0
+         =                       reflink=1    bigtime=1 inobtcount=1 nrext64=0
+data     =                       bsize=4096   blocks=1047040, imaxpct=25
+         =                       sunit=128    swidth=256 blks
+naming   =version 2              bsize=4096   ascii-ci=0, ftype=1
+log      =internal log           bsize=4096   blocks=16384, version=2
+         =                       sectsz=512   sunit=8 blks, lazy-count=1
+realtime =none                   extsz=4096   blocks=0, rtextents=0
+[root@vm1 ~]#
+[root@vm1 ~]# mount /dev/md0 /app1 
+[root@vm1 ~]#
+
+[root@vm1 ~]# df -h /app1
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/md0        4.0G   61M  3.9G   2% /app1
+[root@vm1 ~]#
+
+[root@vm1 ~]# dd if=/dev/urandom of=/app1/file1 bs=1M count=100
+100+0 records in
+100+0 records out
+104857600 bytes (105 MB, 100 MiB) copied, 0.418164 s, 251 MB/s
+
+[root@vm1 ~]# du -sh /app1/file1
+100M    /app1/file1
+[root@vm1 ~]#
+
+
+
+How to view the detail of RAID device
+-------------------------------------
+
+[root@vm1 ~]# mdadm --detail /dev/md0
+/dev/md0:
+           Version : 1.2
+     Creation Time : Thu Jul 25 13:05:19 2024
+        Raid Level : raid5
+        Array Size : 4188160 (3.99 GiB 4.29 GB)
+     Used Dev Size : 2094080 (2045.00 MiB 2144.34 MB)
+      Raid Devices : 3
+     Total Devices : 3
+       Persistence : Superblock is persistent
+
+       Update Time : Thu Jul 25 13:13:53 2024
+             State : clean
+    Active Devices : 3
+   Working Devices : 3
+    Failed Devices : 0
+     Spare Devices : 0
+
+            Layout : left-symmetric
+        Chunk Size : 512K
+
+Consistency Policy : resync
+
+              Name : vm1:0  (local to host vm1)
+              UUID : 2cca37dc:90d238a3:c62adb9d:43ef768d
+            Events : 18
+
+    Number   Major   Minor   RaidDevice State
+       0     202       16        0      active sync   /dev/xvdb
+       1     202       32        1      active sync   /dev/xvdc
+       3     202       48        2      active sync   /dev/xvdd
+[root@vm1 ~]#
+
+
+How to add additional disk or partition in RAID
+-----------------------------------------------
+
+Check whether the disk is part of mdadm  or not 
+
+[root@vm1 ~]# mdadm --examine /dev/xvde
+mdadm: No md superblock detected on /dev/xvde.
+[root@vm1 ~]#
+
+[root@vm1 ~]# mdadm --examine /dev/xvdd
+/dev/xvdd:
+          Magic : a92b4efc
+        Version : 1.2
+    Feature Map : 0x0
+     Array UUID : 2cca37dc:90d238a3:c62adb9d:43ef768d
+           Name : vm1:0  (local to host vm1)
+  Creation Time : Thu Jul 25 13:05:19 2024
+     Raid Level : raid5
+   Raid Devices : 3
+
+ Avail Dev Size : 4188160 sectors (2045.00 MiB 2144.34 MB)
+     Array Size : 4188160 KiB (3.99 GiB 4.29 GB)
+    Data Offset : 6144 sectors
+   Super Offset : 8 sectors
+   Unused Space : before=6064 sectors, after=0 sectors
+          State : clean
+    Device UUID : 9a7dfe39:6a37eed3:239a79dc:8c80341c
+
+    Update Time : Thu Jul 25 13:14:23 2024
+  Bad Block Log : 512 entries available at offset 16 sectors
+       Checksum : 628acd15 - correct
+         Events : 18
+
+         Layout : left-symmetric
+     Chunk Size : 512K
+
+   Device Role : Active device 2
+   Array State : AAA ('A' == active, '.' == missing, 'R' == replacing)
+[root@vm1 ~]#
+
+[root@vm1 ~]# mdadm --manage /dev/md0 --add /dev/xvde  ## Additional disk or spare disk is added 
+mdadm: added /dev/xvde
+[root@vm1 ~]# cat /proc/mdstat
+Personalities : [raid0] [raid1] [raid6] [raid5] [raid4]
+md0 : active raid5 xvde[4](S) xvdd[3] xvdc[1] xvdb[0]
+      4188160 blocks super 1.2 level 5, 512k chunk, algorithm 2 [3/3] [UUU]
+
+unused devices: <none>
+[root@vm1 ~]#
+
+[root@vm1 ~]# mdadm --detail /dev/md0
+/dev/md0:
+           Version : 1.2
+     Creation Time : Thu Jul 25 13:05:19 2024
+        Raid Level : raid5
+        Array Size : 4188160 (3.99 GiB 4.29 GB)
+     Used Dev Size : 2094080 (2045.00 MiB 2144.34 MB)
+      Raid Devices : 3
+     Total Devices : 4
+       Persistence : Superblock is persistent
+
+       Update Time : Thu Jul 25 13:25:37 2024
+             State : clean
+    Active Devices : 3
+   Working Devices : 4  
+    Failed Devices : 0
+     Spare Devices : 1
+
+            Layout : left-symmetric
+        Chunk Size : 512K
+
+Consistency Policy : resync
+
+              Name : vm1:0  (local to host vm1)
+              UUID : 2cca37dc:90d238a3:c62adb9d:43ef768d
+            Events : 19
+
+    Number   Major   Minor   RaidDevice State
+       0     202       16        0      active sync   /dev/xvdb
+       1     202       32        1      active sync   /dev/xvdc
+       3     202       48        2      active sync   /dev/xvdd
+
+       4     202       64        -      spare   /dev/xvde  ### Spare disk showing 
+[root@vm1 ~]#
+
+
+If any disk fails and spare disks are available, RAID will automatically select the first available spare disk to replace the faulty disk. 
+Spare disks are the best backup plan in RAID device.
+
+
+
+Increase the size of array. Following command is used to grow the size of RAID device.
+------------------------------------------------------------------------------------------------------------
+
+[root@vm1 ~]# mdadm --grow --raid-devices=4 /dev/md0   ### To use the spare disk now in the raid 
+[root@vm1 ~]# mdadm --detail /dev/md0
+/dev/md0:
+           Version : 1.2
+     Creation Time : Thu Jul 25 13:05:19 2024
+        Raid Level : raid5
+        Array Size : 4188160 (3.99 GiB 4.29 GB)
+     Used Dev Size : 2094080 (2045.00 MiB 2144.34 MB)
+      Raid Devices : 4
+     Total Devices : 4
+       Persistence : Superblock is persistent
+
+       Update Time : Thu Jul 25 13:30:15 2024
+             State : clean, reshaping
+    Active Devices : 4
+   Working Devices : 4
+    Failed Devices : 0
+     Spare Devices : 0
+
+            Layout : left-symmetric
+        Chunk Size : 512K
+
+Consistency Policy : resync
+
+    Reshape Status : 7% complete  ## It will sync 
+     Delta Devices : 1, (3->4)
+
+              Name : vm1:0  (local to host vm1)
+              UUID : 2cca37dc:90d238a3:c62adb9d:43ef768d
+            Events : 36
+
+    Number   Major   Minor   RaidDevice State
+       0     202       16        0      active sync   /dev/xvdb
+       1     202       32        1      active sync   /dev/xvdc
+       3     202       48        2      active sync   /dev/xvdd
+       4     202       64        3      active sync   /dev/xvde
+
+
+Removing faulty device
+------------------------------------
+
+If spare device is available, RAID will automatically replace the faulty device with spare device. End user will not see any change. He will be able to access the data as usual. Let’s understand it practically.
+
+
+Now we dont have any spare device so lets add the spare device and check. 
+
+[root@vm1 ~]# mdadm --detail /dev/md0
+/dev/md0:
+           Version : 1.2
+     Creation Time : Thu Jul 25 13:05:19 2024
+        Raid Level : raid5
+        Array Size : 6282240 (5.99 GiB 6.43 GB)
+     Used Dev Size : 2094080 (2045.00 MiB 2144.34 MB)
+      Raid Devices : 4
+     Total Devices : 4
+       Persistence : Superblock is persistent
+
+       Update Time : Thu Jul 25 13:32:27 2024
+             State : clean
+    Active Devices : 4
+   Working Devices : 4
+    Failed Devices : 0
+     Spare Devices : 0
+
+            Layout : left-symmetric
+        Chunk Size : 512K
+
+Consistency Policy : resync
+
+              Name : vm1:0  (local to host vm1)
+              UUID : 2cca37dc:90d238a3:c62adb9d:43ef768d
+            Events : 51
+
+    Number   Major   Minor   RaidDevice State
+       0     202       16        0      active sync   /dev/xvdb
+       1     202       32        1      active sync   /dev/xvdc
+       3     202       48        2      active sync   /dev/xvdd
+       4     202       64        3      active sync   /dev/xvde
+[root@vm1 ~]#
+
+[root@vm1 ~]# mdadm --manage /dev/md0 --add /dev/xvdf
+mdadm: added /dev/xvdf
+[root@vm1 ~]#
+
+[root@vm1 ~]# cat /proc/mdstat
+Personalities : [raid0] [raid1] [raid6] [raid5] [raid4]
+md0 : active raid5 xvdf[5](S) xvde[4] xvdd[3] xvdc[1] xvdb[0]
+      6282240 blocks super 1.2 level 5, 512k chunk, algorithm 2 [4/4] [UUUU]
+
+unused devices: <none>
+
+
+[root@vm1 ~]# mdadm --detail /dev/md0
+/dev/md0:
+           Version : 1.2
+     Creation Time : Thu Jul 25 13:05:19 2024
+        Raid Level : raid5
+        Array Size : 6282240 (5.99 GiB 6.43 GB)
+     Used Dev Size : 2094080 (2045.00 MiB 2144.34 MB)
+      Raid Devices : 4
+     Total Devices : 5
+       Persistence : Superblock is persistent
+
+       Update Time : Thu Jul 25 13:46:32 2024
+             State : clean
+    Active Devices : 4
+   Working Devices : 5
+    Failed Devices : 0
+     Spare Devices : 1
+
+            Layout : left-symmetric
+        Chunk Size : 512K
+
+Consistency Policy : resync
+
+              Name : vm1:0  (local to host vm1)
+              UUID : 2cca37dc:90d238a3:c62adb9d:43ef768d
+            Events : 52
+
+    Number   Major   Minor   RaidDevice State
+       0     202       16        0      active sync   /dev/xvdb
+       1     202       32        1      active sync   /dev/xvdc
+       3     202       48        2      active sync   /dev/xvdd
+       4     202       64        3      active sync   /dev/xvde
+
+       5     202       80        -      spare   /dev/xvdf    ### We have a spare device 
+[root@vm1 ~]#
+
+
+To mark a disk as failed device following command is used.
+**********************************************************
+
+In Production normally the disk will be faulty and we need to replace the disk
+ 
+[root@vm1 ~]# ls /app1
+file1
+[root@vm1 ~]#
+
+[root@vm1 ~]# mdadm --manage --set-faulty /dev/md0 /dev/xvdc
+mdadm: set /dev/xvdc faulty in /dev/md0
+[root@vm1 ~]#
+
+
+
+[root@vm1 ~]# ls /app1
+file1
+[root@vm1 ~]#
+
+
+[root@vm1 ~]# mdadm --detail /dev/md0
+/dev/md0:
+           Version : 1.2
+     Creation Time : Thu Jul 25 13:05:19 2024
+        Raid Level : raid5
+        Array Size : 6282240 (5.99 GiB 6.43 GB)
+     Used Dev Size : 2094080 (2045.00 MiB 2144.34 MB)
+      Raid Devices : 4
+     Total Devices : 5
+       Persistence : Superblock is persistent
+
+       Update Time : Thu Jul 25 13:49:48 2024
+             State : clean, degraded, recovering
+    Active Devices : 3
+   Working Devices : 4
+    Failed Devices : 1
+     Spare Devices : 1
+
+            Layout : left-symmetric
+        Chunk Size : 512K
+
+Consistency Policy : resync
+
+    Rebuild Status : 23% complete
+
+              Name : vm1:0  (local to host vm1)
+              UUID : 2cca37dc:90d238a3:c62adb9d:43ef768d
+            Events : 57
+
+    Number   Major   Minor   RaidDevice State
+       0     202       16        0      active sync   /dev/xvdb
+       5     202       80        1      spare rebuilding   /dev/xvdf  ## Spare device started rebuilding 
+       3     202       48        2      active sync   /dev/xvdd
+       4     202       64        3      active sync   /dev/xvde
+
+       1     202       32        -      faulty   /dev/xvdc
+[root@vm1 ~]#
+
+[root@vm1 ~]# mdadm --manage /dev/md0 --remove /dev/xvdc
+mdadm: hot removed /dev/xvdc from /dev/md0
+[root@vm1 ~]# mdadm --detail /dev/md0
+/dev/md0:
+           Version : 1.2
+     Creation Time : Thu Jul 25 13:05:19 2024
+        Raid Level : raid5
+        Array Size : 6282240 (5.99 GiB 6.43 GB)
+     Used Dev Size : 2094080 (2045.00 MiB 2144.34 MB)
+      Raid Devices : 4
+     Total Devices : 4
+       Persistence : Superblock is persistent
+
+       Update Time : Thu Jul 25 14:20:25 2024
+             State : clean
+    Active Devices : 4
+   Working Devices : 4
+    Failed Devices : 0
+     Spare Devices : 0
+
+            Layout : left-symmetric
+        Chunk Size : 512K
+
+Consistency Policy : resync
+
+              Name : vm1:0  (local to host vm1)
+              UUID : 2cca37dc:90d238a3:c62adb9d:43ef768d
+            Events : 72
+
+    Number   Major   Minor   RaidDevice State
+       0     202       16        0      active sync   /dev/xvdb
+       5     202       80        1      active sync   /dev/xvdf
+       3     202       48        2      active sync   /dev/xvdd
+       4     202       64        3      active sync   /dev/xvde
+[root@vm1 ~]#
+
+
+
+
+[root@vm1 ~]# cat /proc/mdstat
+Personalities : [raid0] [raid1] [raid6] [raid5] [raid4]
+md0 : active raid5 xvdf[5] xvde[4] xvdd[3] xvdc[1](F) xvdb[0]
+      6282240 blocks super 1.2 level 5, 512k chunk, algorithm 2 [4/3] [U_UU]
+      [===============>.....]  recovery = 75.9% (1590448/2094080) finish=0.3min speed=21070K/sec
+
+unused devices: <none>
+[root@vm1 ~]#
+
+[root@vm1 ~]# cat /proc/mdstat
+Personalities : [raid0] [raid1] [raid6] [raid5] [raid4]
+md0 : active raid5 xvdf[5] xvde[4] xvdd[3] xvdc[1](F) xvdb[0]
+      6282240 blocks super 1.2 level 5, 512k chunk, algorithm 2 [4/4] [UUUU]
+
+unused devices: <none>
+[root@vm1 ~]#
+
+Now suppose the new disk is added we can add it back assuming the whole disk was added in raid
+[root@vm1 ~]# mdadm --manage /dev/md0 --add /dev/xvdc
+
+
+[root@vm1 ~]# mdadm --detail /dev/md0
+/dev/md0:
+           Version : 1.2
+     Creation Time : Thu Jul 25 13:05:19 2024
+        Raid Level : raid5
+        Array Size : 6282240 (5.99 GiB 6.43 GB)
+     Used Dev Size : 2094080 (2045.00 MiB 2144.34 MB)
+      Raid Devices : 4
+     Total Devices : 5
+       Persistence : Superblock is persistent
+
+       Update Time : Thu Jul 25 14:24:31 2024
+             State : clean
+    Active Devices : 4
+   Working Devices : 5
+    Failed Devices : 0
+     Spare Devices : 1
+
+            Layout : left-symmetric
+        Chunk Size : 512K
+
+Consistency Policy : resync
+
+              Name : vm1:0  (local to host vm1)
+              UUID : 2cca37dc:90d238a3:c62adb9d:43ef768d
+            Events : 73
+
+    Number   Major   Minor   RaidDevice State
+       0     202       16        0      active sync   /dev/xvdb
+       5     202       80        1      active sync   /dev/xvdf
+       3     202       48        2      active sync   /dev/xvdd
+       4     202       64        3      active sync   /dev/xvde
+
+       6     202       32        -      spare   /dev/xvdc
+[root@vm1 ~]#
+
+
+**********************************************
+
+
