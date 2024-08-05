@@ -1,0 +1,31 @@
+chown --> to change the ownership of the file 
+chgrp --> to change the group ownership of the file 
+
+[root@node1 demo]# chown pankaj owner1  --> Just to change the ownership
+[root@node1 demo]# ls -ld owner1
+drwxr-xr-x. 2 pankaj root 6 Aug  5 09:29 owner1
+
+[root@node1 demo]# chown pankaj:pankaj owner1  --> To change the ownership and group ownership in one command 
+[root@node1 demo]# ls -ld owner1
+drwxr-xr-x. 2 pankaj pankaj 6 Aug  5 09:29 owner1
+
+[root@node1 demo]# chgrp rahul owner2
+[root@node1 demo]# ls -ld owner2
+drwxr-xr-x. 2 root rahul 6 Aug  5 09:29 owner2
+
+[root@node1 demo]# chown rahul owner2
+[root@node1 demo]# ls -ld owner2
+drwxr-xr-x. 2 rahul rahul 6 Aug  5 09:29 owner2
+[root@node1 demo]#
+
+[root@node1 demo]# chown -R pankaj:pankaj owner1
+[root@node1 demo]# chown -R rahul:rahul owner1
+[root@node1 demo]#
+
+
+
+
+
+
+
+
