@@ -1,0 +1,15 @@
+tee command is used to store and view both at the same time 
+
+[root@node1 demo]# echo "This is a demo file" > abc4.txt  ## when we give normal > we cant see on the terminal 
+[root@node1 demo]# echo "This is a demo file" | tee  abc5.txt  ## tee shows the output of the command and also save the contents in the file 
+This is a demo file
+[root@node1 demo]# cat abc5.txt
+This is a demo file
+[root@node1 demo]#
+
+[root@node1 demo]# echo "This is a demo file" | tee -a  abc5.txt   ## tee -a append to the file 
+This is a demo file
+[root@node1 demo]# cat abc5.txt
+This is a demo file
+This is a demo file
+[root@node1 demo]#
