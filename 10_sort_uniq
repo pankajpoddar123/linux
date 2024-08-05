@@ -1,0 +1,40 @@
+[root@node1 etc]# ls -ltr | head -n 10 | awk '{print $9}' | grep -v "^$"  | sort  ## grep will remove the blank lines and then sort will display the files in ascending order
+logrotate.conf
+mailcap
+mime.types
+motd
+networks
+printcap
+protocols
+services
+shells
+
+[root@node1 etc]# ls -ltr | head -n 10 | awk '{print $9}' | grep -v "^$"  | sort -r  ## In descending order 
+shells
+services
+protocols
+
+[root@node1 etc]# ls -ltr | sort -k9 | tail -n 2  ## To sort by 9th column 
+lrwxrwxrwx.  1 root root       12 Oct 26  2023 yum.conf -> dnf/dnf.conf
+drwxr-xr-x.  2 root root      175 Aug  1 12:12 yum.repos.
+
+[root@node1 pankaj]# cat textfile
+Hi
+Hi
+Hi Hi Hi
+Hi HI Hi HI HI HI
+
+[root@node1 pankaj]# cat textfile | sort | uniq  ## To remove duplicates 
+Hi
+Hi Hi Hi
+Hi HI Hi HI HI HI
+
+
+[root@node1 pankaj]# cat textfile | sort | uniq -c  ### To know the count of duplicates 
+      2 Hi
+      1 Hi Hi Hi
+      1 Hi HI Hi HI HI HI
+
+[root@node1 pankaj]# cat textfile | sort | uniq -d  ## To only show the duplicate entry 
+Hi
+
