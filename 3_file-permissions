@@ -1,0 +1,69 @@
+There are 3 types of permission 
+r - read 
+w - write
+x - execute
+
+Each permission can be controlled at three levels
+ u - user
+ g - group
+ o - other/everyone 
+
+Numerical Value 
+
+r - read - numberical value 4
+w - write - numberical value 2
+x - execute - numerical value 1
+
+ 7 -- > means read write execute
+ 5 -- > read and execute
+ 6 --> read and write 
+ 4 --> just read 
+ 2 --> just write 
+ 1 - > just execute 
+
+[root@node1 demo]# ls -l abc1.txt
+-rw-r--r--. 1 root root 0 Aug  5 09:12 abc1.txt ## Means user which is root here have rw access , group which is also root have r access and others have r access.
+[root@node1 demo]#
+
+[root@node1 demo]# chmod g+w abc1.txt ## Group we have added write permission
+[root@node1 demo]# ls -l abc1.txt
+-rw-rw-r--. 1 root root 0 Aug  5 09:12 abc1.txt
+[root@node1 demo]#
+
+[root@node1 demo]# chmod +x abc1.txt  ## +x means user , group , others all will have execute permission 
+[root@node1 demo]# ls -l abc1.txt
+-rwxrwxr-x. 1 root root 0 Aug  5 09:12 abc1.txt
+[root@node1 demo]#
+
+[root@node1 demo]# chmod -x abc1.txt
+[root@node1 demo]# ls -l abc1.txt
+-rw-rw-r--. 1 root root 0 Aug  5 09:12 abc1.txt
+[root@node1 demo]#
+
+[root@node1 demo]# chmod 777 abc1.txt  
+[root@node1 demo]# ls -l abc1.txt
+-rwxrwxrwx. 1 root root 0 Aug  5 09:12 abc1.txt
+[root@node1 demo]#
+
+[root@node1 demo]# chmod 775 abc1.txt
+[root@node1 demo]# ls -l abc1.txt
+-rwxrwxr-x. 1 root root 0 Aug  5 09:12 abc1.txt
+[root@node1 demo]#
+
+[root@node1 demo]# chmod 644 abc1.txt
+[root@node1 demo]# ls -l abc1.txt
+-rw-r--r--. 1 root root 0 Aug  5 09:12 abc1.txt
+[root@node1 demo]#
+
+
+
+
+
+
+
+
+
+
+
+
+
