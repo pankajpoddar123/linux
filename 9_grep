@@ -1,0 +1,49 @@
+[root@node1 etc]# cat /etc/passwd| grep -i pankaj  ## to get the lines with the matching string pankaj ; here pankaj is case insensitive due to -i 
+pankaj:x:1004:1004::/home/pankaj:/bin/bash
+[root@node1 etc]#
+
+[root@node1 etc]# cat /etc/passwd | grep -c /home/  ## To count the number of line with the matching keyword
+6
+
+[root@node1 etc]# cat /var/log/messages | tail | grep -n Starting  ## Display the matched line and their line numbers , output shows line number 5 and 8 
+5:Aug  5 12:12:44 node1 systemd[1]: Starting Automatically configure NetworkManager in cloud...  
+8:Aug  5 12:17:45 node1 systemd[1]: Starting Automatically configure NetworkManager in cloud...
+[root@node1 etc]#
+
+[root@node1 etc]# cat /var/log/messages | tail | grep -vi Starting  ## To display the lines not containing the string Starting 
+
+[root@node1 etc]# cat /var/log/messages | tail | grep -vi Starting | grep cloud.$   ## To print the lines not containing starting and ending with cloud.
+Aug  5 12:07:41 node1 systemd[1]: Finished Automatically configure NetworkManager in cloud.
+Aug  5 12:12:44 node1 systemd[1]: Finished Automatically configure NetworkManager in cloud.
+Aug  5 12:17:45 node1 systemd[1]: Finished Automatically configure NetworkManager in cloud.
+
+[root@node1 etc]# cat /var/log/messages | tail | grep -vi Starting | grep cloud.$ | awk '{print $1,$2}'  ## Cpm
+Aug 5
+Aug 5
+Aug 5
+Aug 5
+[root@node1 etc]# cat /var/log/messages | tail | grep -vi Starting | grep cloud.$ | awk '{print $1,$2}' | cut -c1-3
+Aug
+Aug
+Aug
+Aug
+[root@node1 etc]# ls -l | grep conf$  | awk '{print $9}' | head -n 5
+chrony.conf
+dconf
+dracut.conf
+host.conf
+kdump.conf
+
+[root@node1 etc]# ls -l | grep conf$  | awk '{print $9}' | head -n 5 | cut -d . -f 1
+chrony
+dconf
+dracut
+host
+kdump
+
+[root@node1 etc]# ls -l | egrep -i "yum|sysctl"  ## egrep to search multiple strings 
+-rw-r--r--.  1 root root      449 Mar 19 14:31 sysctl.conf
+drwxr-xr-x.  2 root root       28 Jun  6 00:44 sysctl.d
+drwxr-xr-x.  2 root root       57 Jun  6 00:44 yum
+lrwxrwxrwx.  1 root root       12 Oct 26  2023 yum.conf -> dnf/dnf.conf
+drwxr-xr-x.  2 root root      175 Aug  1 12:12 yum.repos.
