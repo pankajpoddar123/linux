@@ -1,0 +1,31 @@
+[root@node1 ~]# cat /etc/passwd | cut -c1 | tail -2 ## to get the first characters of each line 
+p
+r
+[root@node1 ~]#
+
+[root@node1 ~]# cat /etc/passwd | cut -c1,3,7,9 | tail -2  ## To get multiple characters
+pn::
+rhx1
+
+[root@node1 ~]# cat /etc/passwd | cut -c1-9 | tail -2  ## To get range of characters
+pankaj:x:
+rahul:x:1
+
+[root@node1 ~]# cat /etc/passwd | cut -c1-5,15-20 | tail -2 ## To get multiple range of characters 
+panka1004::
+rahul005::/
+
+[root@node1 ~]# cat /etc/passwd | cut -d: -f 6 | tail -2  ## To get columns ... here colums are delimiter by: so we have to specify with -d 
+/home/pankaj
+/home/rahul
+[root@node1 ~]#
+
+[root@node1 ~]# cat /var/log/messages | cut -d " " -f 6-8 | tail -2
+systemd[1]: nm-cloud-setup.service: Deactivated
+systemd[1]: Finished Automatically
+[root@node1 ~]#
+
+
+  
+
+  
