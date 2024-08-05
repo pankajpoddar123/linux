@@ -1,0 +1,31 @@
+1. stdin and it has file descriptor number as 0 and sign as < 
+2. stdout and it has file descriptor number of 2 and sign as >
+stderr it has file descriptor of 2 
+to append to a >> 
+
+[root@node1 demo]# cat < abc1.txt
+Hi How are you
+
+[root@node1 demo]# cat abc1.txt > abc4.txt  ## > this will overwrite the file not append it 
+[root@node1 demo]# cat abc4.txt
+Hi How are you
+
+[root@node1 demo]# cat abc1.txt >> abc4.txt
+[root@node1 demo]# cat abc1.txt >> abc4.txt
+[root@node1 demo]# cat abc1.txt >> abc4.txt
+[root@node1 demo]# cat abc4.txt
+Hi How are you
+Hi How are you
+Hi How are you
+Hi How are you
+
+
+
+[root@node1 demo]# java -version
+-bash: java: command not found
+[root@node1 demo]# java -version 2> error.txt
+
+[root@node1 demo]# cat error.txt
+-bash: java: command not found
+[root@node1 demo]#
+
