@@ -1,0 +1,5 @@
+[root@node1 etc]# ls -l | wc -l  ## List the number of lines 
+185
+
+[root@node1 etc]# cat chrony.conf | wc -l
+49
