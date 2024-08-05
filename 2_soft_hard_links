@@ -1,0 +1,49 @@
+inode: Pointer or a number of a file on the hard disk
+Softlink: Link is not valid if the original file is removed 
+Hardlink: It can't cross the FS ass  its points to the inode number , so deleting renaming or moving the original file will not have affect on the hard link.
+
+To create and delete a softlink 
+[root@node1 /]# ln -s /var/log/ log
+[root@node1 /]# unlink /log
+[root@node1 /]# ln -s /var/log/messages
+[root@node1 /]# ls -l | grep -i messages
+lrwxrwxrwx.   1 root root   17 Aug  5 09:02 messages -> /var/log/messages
+[root@node1 /]# unlink messages
+[root@node1 /]#
+
+To create and delete the hardlinks
+----------------------------------
+[root@node1 demo]# ls -l
+total 0
+-rw-r--r--. 1 root root 0 Aug  5 08:51 abc1.txt
+-rw-r--r--. 1 root root 0 Aug  5 08:51 abc2.txt
+-rw-r--r--. 1 root root 0 Aug  5 08:51 abc3.txt
+-rw-r--r--. 1 root root 0 Aug  5 08:52 def1.txt
+-rw-r--r--. 1 root root 0 Aug  5 08:52 def2.txt
+-rw-r--r--. 1 root root 0 Aug  5 08:52 def3.txt
+[root@node1 demo]# ln abc1.txt abc4.txt  ## To create 
+
+[root@node1 demo]# ls -l
+total 0
+-rw-r--r--. 2 root root 0 Aug  5 08:51 abc1.txt
+-rw-r--r--. 1 root root 0 Aug  5 08:51 abc2.txt
+-rw-r--r--. 1 root root 0 Aug  5 08:51 abc3.txt
+-rw-r--r--. 2 root root 0 Aug  5 08:51 abc4.txt
+-rw-r--r--. 1 root root 0 Aug  5 08:52 def1.txt
+-rw-r--r--. 1 root root 0 Aug  5 08:52 def2.txt
+-rw-r--r--. 1 root root 0 Aug  5 08:52 def3.txt
+
+[root@node1 demo]# rm abc4.txt  ## To delete 
+rm: remove regular empty file 'abc4.txt'? yes
+[root@node1 demo]#
+
+
+
+
+
+
+
+
+
+
+
