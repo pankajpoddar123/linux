@@ -1,0 +1,56 @@
+[root@node1 demo]# ls -l | awk '{print $1}' ## To get column 1
+total
+-rw-r--r--.
+-rw-r--r--.
+
+[root@node1 demo]# ls -l | awk '{print $1,$9}'  ## To get multiple columns
+total
+-rw-r--r--. abc1.txt
+-rw-r--r--. abc2.txt
+
+[root@node1 demo]# ls -l | awk '{print $NF}'  ## To get the last column 
+12
+abc1.txt
+abc2.txt
+abc3.txt
+
+[root@node1 demo]# cat /var/log/messages | awk '/EFI/ {print}'   #To print the line containing the word EFI 
+Aug  4 04:26:56 node1 systemd[1]: Set up automount EFI System Partition Automount.
+Aug  4 04:26:56 node1 systemd[1]: Mounting EFI System Partition Automount...
+Aug  4 04:26:56 node1 systemd[1]: Mounted EFI System Partition Automount.
+
+[root@node1 demo]# cat /var/log/messages | awk '/EFI/ {print $6,$7,$8}' | head -2
+Set up automount
+Mounting EFI System
+[root@node1 demo]#
+
+[root@node1 demo]# cat /etc/passwd | awk -F: '{print $1}' | tail -n 2  ## To specify the field seperator 
+pankaj
+rahul
+[root@node1 demo]#
+
+[root@node1 demo]# cat /var/log/messages | awk '/EFI/ {print $6,$7,$8}' | head -n 2
+Set up automount
+Mounting EFI System
+[root@node1 demo]# cat /var/log/messages | awk '/EFI/ {print $6,$7,$8}' | awk '{$1="Unmounting"; print}' | head -n 2 ## To replace the particular column with the specific word
+Unmounting up automount
+Unmounting EFI System
+[root@node1 demo]#
+
+[root@node1 etc]# ls -l | awk '{if($9 == "chrony.conf") print  $0}'  ## to print the columns based on if conditions 
+-rw-r--r--.  1 root root     1374 Jun  6 00:45 chrony.conf
+[root@node1 etc]# ls -l | awk '{if($9 == "chrony.conf") print}'  ## print $0 and print means the same things ; means all columns 
+-rw-r--r--.  1 root root     1374 Jun  6 00:45 chrony.conf
+[root@node1 etc]#
+
+[root@node1 etc]# cat /etc/passwd | awk -F: '{print NF}' | head -n 2  ## To know the total numbers of fields in a line 
+7
+7
+
+[root@node1 etc]# ls -l | head -n 3 | awk '{print NF}'  ## To know how many columns 
+2
+9
+9
+
+
+
