@@ -1,0 +1,75 @@
+[root@node1 pankaj]# tar -cvf etcd.tar /etc/ ## All the files of the etc including the directory are archived with the etcd.tar in the current location 
+[root@node1 pankaj]# ls -ltr
+total 21756
+-rw-r--r--. 1 root root       34 Aug  5 12:46 textfile
+-rw-r--r--. 1 root root 22272000 Aug  5 13:01 etcd.tar
+
+
+[root@node1 backup]# mkdir backup
+[root@node1 backup]# mv etcd.tar backup/
+[root@node1 backup]# cd backup/
+[root@node1 backup]# tar -xvf etcd.tar
+[root@node1 backup]# ls -ltr
+total 21764
+drwxr-xr-x. 91 root root     8192 Aug  5 09:29 etc   ## See the directory is there and all the files are inside this directory 
+-rw-r--r--.  1 root root 22272000 Aug  5 13:01 etcd.tar
+
+
+[root@node1 backup]# tar -cvf impfiles.tar /etc/chrony.conf /etc/passwd /etc/shadow  ## Creating archive with specific files 
+[root@node1 backup]# ls
+etc  etcd.tar  impfiles.tar
+[root@node1 backup]#
+
+[root@node1 backup]# rm -rf etc
+[root@node1 backup]# tar -tvf impfiles.tar   ## To list the contents of the ar file ## As you can see it will extract those files in the etc directory 
+-rw-r--r-- root/root      1374 2024-06-06 00:45 etc/chrony.conf
+-rw-r--r-- root/root      1310 2024-08-05 09:29 etc/passwd
+---------- root/root      1028 2024-08-05 09:29 etc/shadow
+[root@node1 backup]# tar -xvf impfiles.tar  
+etc/chrony.conf
+etc/passwd
+etc/shadow
+[root@node1 backup]# ls
+etc  etcd.tar  impfiles.tar
+[root@node1 backup]# cd etc
+[root@node1 etc]# ls
+chrony.conf  passwd  shadow
+[root@node1 etc]#
+
+[root@node1 etc]# cd /etc/
+[root@node1 etc]# tar -cvf files.tar chrony.conf passwd shadow  ## This time when creating the file we are using relative path 
+[root@node1 etc]# cd /home/pankaj/backup/
+[root@node1 backup]# ls
+etc  etcd.tar  files.tar  impfiles.tar
+[root@node1 backup]# rm -rf etc etcd.tar impfiles.tar
+[root@node1 backup]# ls
+files.tar
+[root@node1 backup]# tar -tvf files.tar  ## So if we observe it is not showing etc/ now since while creating we havent specified it 
+-rw-r--r-- root/root      1389 2024-08-05 13:10 chrony.conf
+-rw-r--r-- root/root      1310 2024-08-05 09:29 passwd
+---------- root/root      1028 2024-08-05 09:29 shadow
+[root@node1 backup]# tar -xvf files.tar  ## Now when we are extracting it not creating the directory etc 
+chrony.conf
+passwd
+shadow
+[root@node1 backup]# ls
+chrony.conf  files.tar  passwd  shadow
+[root@node1 backup]#
+
+[root@node1 backup]# ls -ltr
+-rw-r--r--. 1 root root 10240 Aug  5 13:14 files.tar
+
+[root@node1 backup]# gzip files.tar   ## To gzip the file , you can see the difference in the size before and after 
+[root@node1 backup]# ls -ltr
+-rw-r--r--. 1 root root 1886 Aug  5 13:14 files.tar.gz
+
+[root@node1 backup]# gzip -d files.tar.gz  ## To gunzip it 
+[root@node1 backup]# ls -ltr files.tar
+-rw-r--r--. 1 root root 10240 Aug  5 13:14 files.tar
+
+
+
+
+
+
+
