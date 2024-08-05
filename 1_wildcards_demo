@@ -1,0 +1,41 @@
+Wildcard Examples
+
+* -  Represents 0 or more characters
+?  - represents a single character 
+[] - represents a range of characters
+{..} - represents a range
+
+
+[root@node1 demo]# touch abc{1..3}.txt  ## {} example
+[root@node1 demo]# ls
+abc1.txt  abc2.txt  abc3.txt
+[root@node1 demo]#
+
+[root@node1 demo]# ls abc*   ## * example 
+abc1.txt  abc2.txt  abc3.txt
+[root@node1 demo]#
+
+[root@node1 demo]# ls abc?.txt  ## ? example 
+abc1.txt  abc2.txt  abc3.txt
+[root@node1 demo]#
+
+[root@node1 demo]# rm -rf abc*
+[root@node1 demo]#
+
+[root@node1 demo]# touch abcd{1..3}.txt
+
+[root@node1 demo]# ls ?bcd?.txt
+abcd1.txt  abcd2.txt  abcd3.txt
+[root@node1 demo]#
+
+[root@node1 demo]# ls abcd[1-9].txt  ## This means all the file with abcd1.txt abcd2.txt abcd3.txt abcd4.txt till abcd9.txt 
+abcd1.txt  abcd2.txt  abcd3.txt
+[root@node1 demo]#
+
+
+
+
+
+
+
+
